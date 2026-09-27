@@ -35,7 +35,7 @@
   <div class="mb-3">
     <%% if <%= model_resource_name %>.persisted? %>
       <div class="float-end">
-        <%%= link_to 'Destroy', <%= model_resource_name %>, method: :delete, class: "text-danger", data: { confirm: 'Are you sure?' } %>
+        <%%= link_to 'Destroy', <%= model_resource_name %>, class: "text-danger", data: { turbo_method: :delete, turbo_confirm: 'Are you sure?' } %>
       </div>
     <%% end %>
 

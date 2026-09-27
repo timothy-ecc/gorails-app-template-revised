@@ -1,10 +1,3 @@
-<% if current_user != true_user %>
-  <div class="alert alert-warning text-center">
-    You're logged in as <b><%= current_user.name %> (<%= current_user.email %>)</b>
-    <%= link_to stop_impersonating_madmin_impersonates_path, method: :post do %><%= icon("fas", "times") %> Logout <% end %>
-  </div>
-<% end %>
-
 <nav class="navbar navbar-expand-md navbar-light bg-light">
   <div class="container mx-auto">
     <%= link_to Rails.configuration.application_name, root_path, class: "navbar-brand" %>
@@ -23,7 +16,7 @@
 
           <li class="nav-item">
             <%= link_to notifications_path, class: "nav-link" do %>
-              <span><i class="far fa-bell" aria-hidden="true"></i></span>
+              <span><i class="bi bi-bell" aria-hidden="true"></i></span>
             <% end %>
           </li>
 

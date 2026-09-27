@@ -1,16 +1,27 @@
-<div class="page-header">
-  <%%= link_to <%= index_helper %>_path, class: 'btn btn-default' do %>
+<div class="row">
+  <div class="col-sm-6">
+    <h1><%= human_name %></h1>
+  </div>
+
+  <div class="col-sm-6 text-end">
+  <%%= link_to <%= index_helper %>_path, class: 'btn btn-secondary' do %>
     All <%= plural_table_name.capitalize %>
   <%% end %>
   <%%= link_to edit_<%= singular_table_name %>_path(@<%= singular_table_name %>), class: 'btn btn-primary' do %>
     Edit
   <%% end %>
-  <h1>Show <%= singular_table_name %></h1>
+  </div>
 </div>
 
-<dl class="dl-horizontal">
-  <%- attributes.each do |attribute| -%>
-  <dt><%= attribute.human_name %>:</dt>
-  <dd><%%= @<%= singular_table_name %>.<%= attribute.name %> %></dd>
-  <%- end -%>
-</dl>
+<div class="table-responsive">
+  <table class="table table-striped table-bordered">
+    <tbody>
+    <%- attributes.each do |attribute| -%>
+      <tr>
+        <th scope="row"><%= attribute.human_name %>:</th>
+        <td><%%= @<%= singular_table_name %>.<%= attribute.name %> %></td>
+      </tr>
+    <%- end -%>
+    </tbody>
+  </table>
+</div>

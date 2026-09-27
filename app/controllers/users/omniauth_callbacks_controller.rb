@@ -13,10 +13,6 @@ module Users
       handle_auth "Facebook"
     end
 
-    def twitter
-      handle_auth "Twitter"
-    end
-
     def github
       handle_auth "Github"
     end
@@ -34,8 +30,9 @@ module Users
         flash[:notice] = "Your #{kind} account was connected."
         redirect_to edit_user_registration_path
       else
-        sign_in_and_redirect user, event: :authentication
+        sign_in(user)
         set_flash_message :notice, :success, kind: kind
+        redirect_to after_sign_in_path_for(user)
       end
     end
 
