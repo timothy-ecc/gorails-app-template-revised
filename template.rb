@@ -39,8 +39,34 @@ unless rails_8_or_newer?
   exit 1
 end
 
+# Pick one of `choices`. ENV wins so CI and reruns stay non-interactive, otherwise ask.
+# Thor's `ask` returns nil when stdin is closed (CI, a scripted `rails new`) rather than the
+# default, and `limited_to:` would spin forever in that case, so the fallback happens here.
+def choose(key, question, choices, default)
+  answer = ENV[key] || ask("#{question} [#{choices.join("/")}]", default: default) || default
+  answer = answer.to_s.strip.downcase
+  answer = default unless choices.include?(answer)
+  say "  #{key}: #{answer}", :green
+  answer
+end
+
+def ask_questions
+  say "\nBase install: every package is added by default.", :blue
+  say "Preset either answer with SCHEDULER=... CSS=...\n"
+
+  @scheduler = choose("SCHEDULER", "Which job scheduler?", %w[solid_queue sidekiq none], "solid_queue")
+  @css = choose("CSS", "Which CSS framework?", %w[bootstrap tailwind simple none], "bootstrap")
+end
+
+# Bootstrap and Tailwind are installed through cssbundling-rails, so they need a build step, a
+# `css:` foreman process, and scaffold templates. simple.css and none are plain files that Propshaft
+# serves as they are, and simple.css being classless means Rails' own scaffolds already look right.
+def css_build?
+  !%w[none simple].include?(@css)
+end
+
 def add_gems
-  add_gem 'cssbundling-rails'
+  add_gem 'cssbundling-rails' if css_build?
   add_gem 'devise', '~> 5.0'
   add_gem 'friendly_id', '~> 5.7'
   add_gem 'madmin'
@@ -50,6 +76,7 @@ def add_gems
   add_gem 'omniauth-github', '~> 2.0'
   add_gem 'pretender', '~> 1.0'
   add_gem 'pundit', '~> 2.5'
+  add_gem 'sidekiq' if @scheduler == "sidekiq"
   add_gem 'sitemap_generator', '~> 7.0'
 end
 
@@ -66,6 +93,34 @@ def use_solid_queue_in_development
   # never sees a job. Development Solid Queue has no `connects_to`, so it uses the primary
   # database, where lib/tasks/solid_queue.rake loads the queue tables during db:prepare.
   environment "config.active_job.queue_adapter = :solid_queue", env: "development"
+end
+
+# The command the worker process runs, or nil when the choice is to have no worker at all.
+def worker_command
+  {"solid_queue" => "bin/jobs", "sidekiq" => "bundle exec sidekiq"}[@scheduler]
+end
+
+# `solid_queue:install` turns production.rb's commented-out adapter line into
+# `config.active_job.queue_adapter = :solid_queue`, and Thor's `environment` injects at the *top*
+# of the `configure do` block, so an injected line would lose to it. Gsub instead.
+def set_queue_adapter(adapter)
+  gsub_file "config/environments/production.rb",
+            "config.active_job.queue_adapter = :solid_queue",
+            "config.active_job.queue_adapter = :#{adapter}"
+  environment "config.active_job.queue_adapter = :#{adapter}", env: "development"
+end
+
+def configure_scheduler
+  case @scheduler
+  when "solid_queue" then use_solid_queue_in_development
+  when "sidekiq"     then set_queue_adapter("sidekiq")
+  when "none"        then set_queue_adapter("async")
+  end
+
+  command = worker_command
+  %w[Procfile Procfile.dev].each do |procfile|
+    gsub_file procfile, /^worker: .*\n/, command ? "worker: #{command}\n" : ""
+  end
 end
 
 def add_users
@@ -89,7 +144,8 @@ def add_javascript
 end
 
 def copy_templates
-  remove_file "app/assets/stylesheets/application.css"
+  # Rails' stylesheet is what Propshaft serves when there is no build step to produce one.
+  remove_file "app/assets/stylesheets/application.css" if css_build?
   remove_file "app/javascript/application.js"
   remove_file "app/javascript/controllers/index.js"
   remove_file "Procfile.dev"
@@ -101,9 +157,24 @@ def copy_templates
   copy_file "app/javascript/application.js"
   copy_file "app/javascript/controllers/index.js"
 
+  # `app/` is the Bootstrap payload. The other frameworks are overlays copied over the top of it,
+  # so every file under them must be complete: anything an overlay omits keeps Bootstrap classes.
+  # Thor's `directory` defaults its destination to the source path, hence the explicit ".".
+  # simple.css styles the same plain HTML as `none`, so it reuses that overlay and adds its own.
   directory "app", force: true
-  directory "lib", force: true
   directory "test", force: true
+  directory "lib/tasks", force: true if @scheduler == "solid_queue"
+  directory "lib/templates", force: true if css_build?
+  directory "variants/#{@css == "simple" ? "none" : @css}", ".", force: true unless @css == "bootstrap"
+  directory "variants/simple", ".", force: true if @css == "simple"
+
+  unless @css == "bootstrap"
+    remove_file "app/helpers/bootstrap_helper.rb"
+    remove_file "app/assets/stylesheets/jumpstart"
+  end
+
+  gsub_file "Procfile.dev", /^css: .*\n/, "" unless css_build?
+
   # No "directory \"config\"" here: this template ships no config payload, and Thor would
   # fall back to Rails' own config templates, overwriting the app's config (cable.yml, etc.)
 
@@ -146,12 +217,30 @@ def add_sitemap
   rails_command "sitemap:install"
 end
 
-def add_bootstrap
-  rails_command "css:install:bootstrap"
+def add_css
+  return unless css_build?
+
+  rails_command "css:install:#{@css}"
 end
 
 def add_announcements_css
-  insert_into_file 'app/assets/stylesheets/application.bootstrap.scss', '@import "jumpstart/announcements";'
+  case @css
+  when "bootstrap"
+    insert_into_file 'app/assets/stylesheets/application.bootstrap.scss', '@import "jumpstart/announcements";'
+  when "none", "simple"
+    # No build step, so Propshaft serves Rails' own stylesheet as-is. Same two rules, with the
+    # Bootstrap sass variables replaced by the hex values they resolve to. The last three revive
+    # the announcement type classes, which the plain views still emit and only Bootstrap used to
+    # style: #b45309 instead of Bootstrap's #ffc107, which is unreadable on a white background.
+    append_to_file "app/assets/stylesheets/application.css", <<~CSS
+      .announcement strong { color: #495057; font-weight: 900; }
+      .unread-announcements::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: #dc3545; }
+      .text-success { color: #198754; }
+      .text-warning { color: #b45309; }
+      .text-danger { color: #dc3545; }
+    CSS
+  end
+  # tailwind: the two rules are utility classes in the tailwind helper and views
 end
 
 def add_esbuild_script
@@ -169,6 +258,7 @@ end
 
 # Main setup
 add_template_repository_to_source_path
+ask_questions
 add_gems
 
 after_bundle do
@@ -180,7 +270,7 @@ after_bundle do
   add_notifications
   add_multiple_authentication
   add_friendly_id
-  add_bootstrap
+  add_css
   add_sitemap
   add_announcements_css
   rails_command "active_storage:install"
@@ -189,7 +279,7 @@ after_bundle do
   run "bundle lock --add-platform x86_64-linux"
 
   copy_templates
-  use_solid_queue_in_development
+  configure_scheduler
 
   add_esbuild_script
 
@@ -217,4 +307,6 @@ after_bundle do
   say "  bin/rails g madmin:install # Generate admin dashboards"
   say "  gem install foreman"
   say "  bin/dev"
+  say
+  say "  scheduler: #{@scheduler}, css: #{@css}"
 end

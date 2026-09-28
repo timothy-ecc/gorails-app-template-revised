@@ -1,0 +1,13 @@
+<% flash.each do |msg_type, message| %>
+  <% classes = {
+    success: "bg-green-50 text-green-800",
+    error: "bg-red-50 text-red-800",
+    alert: "bg-amber-50 text-amber-800",
+    notice: "bg-indigo-50 text-indigo-800",
+  }.fetch(msg_type.to_sym, "bg-gray-50 text-gray-800") %>
+  <div class="mx-auto w-full max-w-5xl px-4 pt-4">
+    <div class="<%= classes %> rounded-md px-4 py-3" role="alert">
+      <%= message %>
+    </div>
+  </div>
+<% end %>

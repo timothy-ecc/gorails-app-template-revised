@@ -1,0 +1,23 @@
+<h1 class="mb-4 text-2xl font-bold text-gray-900">What's New</h1>
+
+<div class="divide-y divide-gray-200 rounded-md border border-gray-200">
+  <% @announcements.each do |announcement| %>
+    <div class="flex flex-col gap-1 px-4 py-4 sm:flex-row" id="<%= dom_id(announcement) %>">
+      <div class="sm:w-32 sm:shrink-0">
+        <%= link_to announcements_path(anchor: dom_id(announcement)), class: "font-bold text-gray-700" do %>
+          <%= announcement.published_at.strftime("%b %d") %>
+        <% end %>
+      </div>
+
+      <div class="announcement">
+        <strong class="<%= announcement_class(announcement.announcement_type) %>"><%= announcement.announcement_type.titleize %>:</strong>
+        <strong><%= announcement.name %></strong>
+        <%= simple_format announcement.description %>
+      </div>
+    </div>
+  <% end %>
+
+  <% if @announcements.empty? %>
+    <div class="px-4 py-4 text-gray-600">Exciting stuff coming very soon!</div>
+  <% end %>
+</div>

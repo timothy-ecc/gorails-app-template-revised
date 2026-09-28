@@ -1,0 +1,32 @@
+<header>
+  <nav>
+    <%= link_to Rails.configuration.application_name, root_path %>
+
+    <%# No Bootstrap JS here, so the account menu is a <details> element rather than a dropdown. %>
+    <ul>
+      <li>
+        <%= link_to "What's New", announcements_path, class: unread_announcements(current_user) %>
+      </li>
+
+      <% if user_signed_in? %>
+        <li><%= link_to "Notifications", notifications_path %></li>
+
+        <li>
+          <details>
+            <summary><%= image_tag avatar_path(current_user, size: 40), height: 24, width: 24, alt: "Account menu" %></summary>
+            <ul>
+              <li><%= link_to "Settings", edit_user_registration_path %></li>
+              <% if current_user.admin? && respond_to?(:madmin_root_path) %>
+                <li><%= link_to "Admin Area", madmin_root_path %></li>
+              <% end %>
+              <li><%= button_to "Logout", destroy_user_session_path, method: :delete %></li>
+            </ul>
+          </details>
+        </li>
+      <% else %>
+        <li><%= link_to "Sign Up", new_user_registration_path %></li>
+        <li><%= link_to "Login", new_user_session_path %></li>
+      <% end %>
+    </ul>
+  </nav>
+</header>

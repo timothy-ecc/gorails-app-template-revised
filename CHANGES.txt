@@ -139,6 +139,65 @@ Found by a generated app: `bin/dev` died with `Could not find table 'solid_queue
 * Footgun to know about: in development, jobs only run if the worker is running. Use `bin/dev`
   rather than `bin/rails server` alone, or jobs sit in the queue.
 
+12. Selectable scheduler and CSS framework (added 2026-09-28)
+-----------------------------------------------------------
+* `template.rb` asks two questions after the base install, before `add_gems`: the job scheduler
+  (`SCHEDULER`: solid_queue/sidekiq/none) and the CSS framework (`CSS`:
+  bootstrap/tailwind/simple/none). Both default to what the template used to hardcode, so a
+  non-interactive run is unchanged.
+* Asked *before* `add_gems`, not in `after_bundle`: `Thor::Actions::Gem#invoke!` runs
+  `bundle install` again for a gem added late, so asking first keeps it to one bundle.
+* Selection is `ENV[key] || ask(...) || default`. Not Thor's `ask ... limit_to:`: on closed stdin
+  (CI, a scripted `rails new`) `ask` returns *nil* rather than the default, and `ask_filtered`
+  loops forever on nil. Anything unrecognised falls back to the default.
+* Production's job adapter was being set by accident: `solid_queue:install` gsub-rewrites
+  `production.rb`'s commented-out `queue_adapter = :resque` line into `:solid_queue`. Thor's
+  `environment` action injects at the *top* of the `configure do` block, so an injected line would
+  lose to that one. `set_queue_adapter` gsubs `production.rb` directly.
+* `Procfile`/`Procfile.dev` are still a single payload; the `worker:` line is gsubbed afterwards
+  (`bin/jobs` / `bundle exec sidekiq` / removed) rather than shipping three copies of each file.
+* `copy_templates` no longer copies `lib` wholesale. `lib/tasks` (Solid Queue only) and
+  `lib/templates` (a CSS framework only) are copied separately, so a sidekiq app gets no
+  `solid_queue.rake` and an unstyled app gets no Bootstrap scaffold templates.
+* `app/` is the Bootstrap payload and `variants/{tailwind,simple,none}` are overlays copied over it,
+  so the default install pays nothing. Consequence: an overlay file that is missing is not an error,
+  it silently leaves Bootstrap classes behind, and `bootstrap_helper.rb` / `jumpstart/` have to be
+  removed explicitly. The test asserts the overlay landed.
+* Thor's `directory` defaults its *destination* to the source path (`directory "doc"` writes to
+  `doc/`), so the overlay copy needs an explicit destination: `directory "variants/tailwind", "."`.
+* The account menu is a Bootstrap dropdown, i.e. it needs Bootstrap's JavaScript. The non-Bootstrap
+  overlays use a `<details>` element instead, so logout and notifications are reachable with no
+  JavaScript.
+* `AnnouncementsHelper` is framework-specific too (`text-success` etc.), so tailwind ships its own
+  copy. Tailwind v4's automatic source detection does pick up classes out of `.rb` files, which is
+  how the unread-announcement dot and the announcement colors reach the stylesheet.
+* The four CSS answers split into two groups, and `css_build?` is the whole of that split: bootstrap
+  and tailwind are installed by `css:install:*`, so they need the gem, a build step, a `css:`
+  foreman process and matching scaffold templates. simple and none are plain files Propshaft serves
+  as they are, and get Rails' own `application.css` and Rails' own scaffold templates.
+* `CSS=simple` (simple.css v2) is vendored at `variants/simple/app/assets/stylesheets/simple.css`:
+  9.7KB minified, MIT, no `url()` or `@import`, local font stacks, so a generated app needs no
+  network and no build step. To update it, curl `https://cdn.simplecss.org/simple.min.css` over that
+  file and put the version header back. It is deliberately not a CDN `<link>` or an npm package:
+  this template ships everything locally, and a `rails new` that depends on a CDN or on a build step
+  for a 10KB file is a worse trade than a file that can go stale.
+* simple.css is classless, so it styles the same plain HTML as the `none` overlay: `copy_templates`
+  copies `variants/none` and then `variants/simple` over it, and the second overlay only has to
+  carry what actually differs — the stylesheet and a layout that links it. The link sits *before*
+  `render 'shared/head'` in the layout because that partial links `application.css`, and the app's
+  own rules have to win.
+* No simple.css scaffold templates: `rails g scaffold` already emits semantic HTML, which is all a
+  classless stylesheet needs. Five more templates to keep in sync was not worth it.
+* The announcement rules for `simple` and `none` are appended to `application.css`, including the
+  three `text-success`/`text-warning`/`text-danger` type colors. The plain views emit those classes
+  and only Bootstrap ever styled them, so before this they were dead in both variants. The warning
+  color is `#b45309`, not Bootstrap's `#ffc107`, which is unreadable on white.
+* Gotcha: Tailwind v4 scans from the enclosing git root, so an app generated *inside* another
+  repository has that repository scanned too. Harmless in a generated app, but it means the
+  `.text-green-600` assertion in `test/template_test.rb` can pass locally by finding the class in
+  this repo's own `variants/`; CI removes `.git` first, so there it can only come from the
+  generated app.
+
 Not changed, on purpose
 -----------------------
 * importmap-rails and `config/importmap.rb`: madmin depends on importmap-rails, and the Stimulus app

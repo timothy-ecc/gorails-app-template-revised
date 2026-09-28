@@ -1,0 +1,44 @@
+<h1>Account</h1>
+
+<%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
+  <%= render "devise/shared/error_messages", resource: resource %>
+
+  <p>
+    <%= f.text_field :name, autofocus: false, placeholder: "Full name" %>
+  </p>
+
+  <p>
+    <%= f.email_field :email, placeholder: 'Email Address' %>
+  </p>
+
+  <p>
+    <%= f.label :avatar %>
+    <%= f.file_field :avatar, accept: 'image/*' %>
+  </p>
+
+  <p><%= image_tag avatar_path(f.object) %></p>
+
+  <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
+    <div role="alert">Currently waiting confirmation for: <%= resource.unconfirmed_email %></div>
+  <% end %>
+
+  <p>
+    <%= f.password_field :password, autocomplete: "off", placeholder: 'Password'  %>
+    <small>Leave password blank if you don't want to change it</small>
+  </p>
+
+  <p>
+    <%= f.password_field :password_confirmation, autocomplete: "off", placeholder: 'Confirm Password'  %>
+  </p>
+
+  <p>
+    <%= f.password_field :current_password, autocomplete: "off", placeholder: 'Current Password'  %>
+    <small>We need your current password to confirm your changes</small>
+  </p>
+
+  <p><%= f.submit "Save Changes" %></p>
+<% end %>
+
+<hr>
+
+<p><%= link_to "Deactivate my account", registration_path(resource_name), data: { turbo_method: :delete, turbo_confirm: "Are you sure? You cannot undo this." } %></p>

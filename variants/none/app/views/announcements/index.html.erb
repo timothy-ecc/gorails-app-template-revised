@@ -1,0 +1,17 @@
+<h1>What's New</h1>
+
+<% @announcements.each do |announcement| %>
+  <div class="announcement" id="<%= dom_id(announcement) %>">
+    <%= link_to announcement.published_at.strftime("%b %d"), announcements_path(anchor: dom_id(announcement)) %>
+
+    <p>
+      <strong class="<%= announcement_class(announcement.announcement_type) %>"><%= announcement.announcement_type.titleize %>:</strong>
+      <strong><%= announcement.name %></strong>
+      <%= simple_format announcement.description %>
+    </p>
+  </div>
+<% end %>
+
+<% if @announcements.empty? %>
+  <div>Exciting stuff coming very soon!</div>
+<% end %>

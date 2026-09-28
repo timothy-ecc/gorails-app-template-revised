@@ -4,13 +4,13 @@
 
 # GoRails App Template
 
-A Rails 8.1+ application template. It generates a working app with accounts, an admin panel, background jobs and a Bootstrap 5 front end already wired together — no Redis, no Sidekiq, no webpacker. Run it once and you have something to build on instead of a folder of boilerplate.
+A Rails 8.1+ application template. It generates a working app with accounts, an admin panel, background jobs and a front end already wired together — no Redis, no Sidekiq, no webpacker. Run it once and you have something to build on instead of a folder of boilerplate. You pick the job scheduler and the CSS framework; everything else is the same.
 
 #### What's included
 
-**Stack** — Rails 8.1+, Propshaft, Importmap + Stimulus + Turbo, Active Storage, esbuild for JavaScript (with hot reload) and cssbundling-rails for CSS, Bootstrap 5 with Bootstrap Icons.
+**Stack** — Rails 8.1+, Propshaft, Importmap + Stimulus + Turbo, Active Storage, esbuild for JavaScript (with hot reload), plus your choice of front end: Bootstrap 5 with Bootstrap Icons, Tailwind, simple.css, or no CSS framework at all.
 
-**No Redis** — background jobs run on [Solid Queue](https://github.com/rails/solid_queue) (`bin/jobs`), caching on Solid Cache and Action Cable on Solid Cable. Production gives each its own database.
+**No Redis** — by default background jobs run on [Solid Queue](https://github.com/rails/solid_queue) (`bin/jobs`), caching on Solid Cache and Action Cable on Solid Cable. Production gives each its own database. Sidekiq is one answer away if you'd rather have it.
 
 **Accounts** — Devise 5 with email and password plus Facebook and GitHub sign-in, read from encrypted credentials per environment, with each user's tokens kept in `Service`. Every user has a name, an avatar (Active Storage variant, Gravatar fallback) and an `admin` flag.
 
@@ -18,11 +18,11 @@ A Rails 8.1+ application template. It generates a working app with accounts, an 
 
 **Product starter** — "What's New" announcements with unread tracking, an in-app notifications inbox via `noticed`, and `pretender` for signing in as another user while developing.
 
-**CRUD that looks right** — Bootstrap 5 scaffold templates, so `rails g scaffold` hands you styled index, form and show pages.
+**CRUD that looks right** — Bootstrap 5 or Tailwind scaffold templates, so `rails g scaffold` hands you styled index, form and show pages. (With simple.css or no CSS, Rails' own templates are already semantic HTML, which is all a classless stylesheet needs.)
 
 **Pages** — a responsive navbar with account and notification menus, a home page, and `/terms` and `/privacy` routes.
 
-**Dev & deploy** — `bin/dev` runs the web server, the job worker and the JS/CSS watchers; a `Procfile` runs the same two processes in production. A GitHub Actions workflow generates a throwaway app and checks it builds and boots.
+**Dev & deploy** — `bin/dev` runs the web server, the job worker and the asset watchers; a `Procfile` runs the same processes in production. Which ones exist depends on your answers: no worker with `SCHEDULER=none`, no CSS watcher with `CSS=simple` or `CSS=none`. A GitHub Actions workflow generates a throwaway app and checks it builds and boots.
 
 #### Requirements
 
@@ -48,6 +48,34 @@ Or if you have downloaded this repo, you can reference template.rb locally:
 rails new myapp -d postgresql -m template.rb
 ```
 
+#### Choosing a scheduler and a CSS framework
+
+Everything else is installed by default. The template asks two questions:
+
+```
+Which job scheduler? [solid_queue/sidekiq/none] (solid_queue)
+Which CSS framework? [bootstrap/tailwind/simple/none] (bootstrap)
+```
+
+| Answer | What you get |
+| --- | --- |
+| `SCHEDULER=solid_queue` | Solid Queue, no extra infrastructure. `bin/jobs` as the worker. The default. |
+| `SCHEDULER=sidekiq` | Adds the `sidekiq` gem and points Active Job at it. Needs a Redis server to run the worker. |
+| `SCHEDULER=none` | No worker process. Active Job falls back to the in-process `:async` adapter. |
+| `CSS=bootstrap` | Bootstrap 5 + Bootstrap Icons, and matching scaffold templates. The default. |
+| `CSS=tailwind` | Tailwind (v4) and matching scaffold templates. No Bootstrap, no Bootstrap JavaScript. |
+| `CSS=simple` | [simple.css](https://simplecss.org) v2, a 10KB classless stylesheet. Styled, but no build step: no `cssbundling-rails`, no `css:` process, and Rails' own scaffold templates are already semantic HTML, so they look right as they are. |
+| `CSS=none` | No CSS framework and no `cssbundling-rails`. Rails' own `application.css` is kept and the views are plain, unstyled HTML for you to style. |
+
+Press Enter to take the default for either one. To skip the questions entirely, preset them in the environment — this is what the test suite and CI do:
+
+```bash
+SCHEDULER=sidekiq CSS=tailwind rails new myapp -d postgresql -m template.rb
+```
+
+Both answers need a little follow-up depending on what you pick: `SCHEDULER=sidekiq` needs a reachable
+Redis, and `SCHEDULER=none` means jobs run inside the web process instead of a separate worker.
+
 #### Running your app
 
 Set up the database first:
@@ -56,9 +84,9 @@ Set up the database first:
 bin/rails db:prepare
 ```
 
-This also creates Solid Queue's tables, which the job worker (`bin/jobs`) needs. Development
-runs jobs through Solid Queue, so start the app with `bin/dev` rather than `bin/rails server`
-alone -- otherwise jobs sit in the queue until a worker is running.
+This also creates Solid Queue's tables, which the job worker (`bin/jobs`) needs. With the default
+scheduler, development runs jobs through Solid Queue, so start the app with `bin/dev` rather than
+`bin/rails server` alone -- otherwise jobs sit in the queue until a worker is running.
 
 Then start the web server, the job worker, and the asset watchers:
 
@@ -68,7 +96,8 @@ bin/dev
 
 You can also run them in separate terminals manually if you prefer.
 
-A `Procfile` is generated for production too — it runs the web server and the Solid Queue worker.
+A `Procfile` is generated for production too — it runs the web server and, unless you picked
+`SCHEDULER=none`, a worker.
 
 #### Authenticate with social networks
 

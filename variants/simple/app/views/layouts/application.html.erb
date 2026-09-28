@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%# Linked before shared/head so the app's own application.css, which that partial links,
+        still wins the cascade. %>
+    <%= stylesheet_link_tag "simple", media: "all", "data-turbo-track": "reload" %>
+    <%= render 'shared/head' %>
+  </head>
+
+  <body>
+    <%= render 'shared/navbar' %>
+
+    <main>
+      <%= render 'shared/notices' %>
+
+      <%= yield %>
+    </main>
+
+    <%= render 'shared/footer' %>
+  </body>
+</html>

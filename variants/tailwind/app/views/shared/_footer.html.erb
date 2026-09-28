@@ -1,0 +1,9 @@
+<footer class="border-t border-gray-200 bg-gray-50 py-6">
+  <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4 text-sm text-gray-500">
+    <span>&copy; <%= Date.today.year %> Your Company</span>
+    <ul class="flex gap-4">
+      <li><%= link_to "Terms", terms_path, class: "hover:text-gray-900" %></li>
+      <li><%= link_to "Privacy", privacy_path, class: "hover:text-gray-900" %></li>
+    </ul>
+  </div>
+</footer>

@@ -1,0 +1,48 @@
+<%%= form_with(model: <%= model_resource_name %>) do |form| %>
+  <%% if <%= singular_table_name %>.errors.any? %>
+    <div id="error_explanation" class="mb-4 rounded-md bg-red-50 p-4 text-red-800">
+      <h2 class="font-semibold"><%%= pluralize(<%= singular_table_name %>.errors.count, "error") %> prohibited this <%= singular_table_name %> from being saved:</h2>
+
+      <ul class="mt-2 list-disc pl-5">
+      <%% <%= singular_table_name %>.errors.full_messages.each do |message| %>
+        <li><%%= message %></li>
+      <%% end %>
+      </ul>
+    </div>
+  <%% end %>
+
+<% attributes.each do |attribute| -%>
+  <div class="mb-4">
+<% if attribute.password_digest? -%>
+    <%%= form.label :password, class: 'mb-1 block text-sm font-medium text-gray-700' %>
+    <%%= form.password_field :password, class: 'block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm' %>
+  </div>
+
+  <div class="mb-4">
+    <%%= form.label :password_confirmation, class: 'mb-1 block text-sm font-medium text-gray-700' %>
+    <%%= form.password_field :password_confirmation, class: 'block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm' %>
+<% else -%>
+    <%%= form.label :<%= attribute.column_name %>, class: 'mb-1 block text-sm font-medium text-gray-700' %>
+  <% if attribute.field_type == "checkbox" -%>
+    <%%= form.<%= attribute.field_type %> :<%= attribute.column_name %>, class: "mr-2 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" %>
+  <% else -%>
+    <%%= form.<%= attribute.field_type %> :<%= attribute.column_name %>, class: 'block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm' %>
+  <% end -%>
+<% end -%>
+  </div>
+
+<% end -%>
+  <div class="mb-4 flex items-center gap-3">
+    <%%= form.submit class: "inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500" %>
+
+    <%% if <%= model_resource_name %>.persisted? %>
+      <%%= link_to "Cancel", <%= model_resource_name %>, class: "text-sm text-gray-600 hover:text-gray-900" %>
+    <%% else %>
+      <%%= link_to "Cancel", <%= index_helper %>_path, class: "text-sm text-gray-600 hover:text-gray-900" %>
+    <%% end %>
+
+    <%% if <%= model_resource_name %>.persisted? %>
+      <%%= link_to 'Destroy', <%= model_resource_name %>, class: "ml-auto text-sm text-red-600 hover:text-red-500", data: { turbo_method: :delete, turbo_confirm: 'Are you sure?' } %>
+    <%% end %>
+  </div>
+<%% end %>

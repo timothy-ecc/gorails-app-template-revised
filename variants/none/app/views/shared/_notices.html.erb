@@ -1,0 +1,6 @@
+<%# Unstyled: add your own markup here, or pick a CSS framework in the template. %>
+<% flash.each do |msg_type, message| %>
+  <div role="alert">
+    <%= message %>
+  </div>
+<% end %>

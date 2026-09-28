@@ -1,0 +1,25 @@
+<h1>Sign Up</h1>
+
+<%= form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
+  <%= render "devise/shared/error_messages", resource: resource %>
+
+  <p>
+    <%= f.text_field :name, autofocus: false, placeholder: "Full name" %>
+  </p>
+
+  <p>
+    <%= f.email_field :email, autofocus: false, placeholder: "Email Address" %>
+  </p>
+
+  <p>
+    <%= f.password_field :password, autocomplete: "off", placeholder: 'Password' %>
+  </p>
+
+  <p>
+    <%= f.password_field :password_confirmation, autocomplete: "off", placeholder: 'Confirm Password' %>
+  </p>
+
+  <p><%= f.submit "Sign up" %></p>
+<% end %>
+
+<%= render "devise/shared/links" %>

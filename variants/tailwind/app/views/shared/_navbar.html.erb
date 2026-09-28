@@ -1,0 +1,37 @@
+<header class="border-b border-gray-200 bg-white">
+  <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-4">
+    <%= link_to Rails.configuration.application_name, root_path, class: "text-lg font-bold text-gray-900" %>
+
+    <nav class="ml-auto flex items-center gap-4 text-sm text-gray-600">
+      <%= link_to "What's New", announcements_path, class: "hover:text-gray-900 #{unread_announcements(current_user)}" %>
+
+      <% if user_signed_in? %>
+        <%= link_to notifications_path, aria: { label: "Notifications" }, class: "hover:text-gray-900" do %>
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+          </svg>
+        <% end %>
+
+        <%# No Bootstrap JS here, so the account menu is a <details> element rather than a dropdown. %>
+        <details class="relative">
+          <summary class="flex cursor-pointer list-none items-center">
+            <%= image_tag avatar_path(current_user, size: 40), height: 24, width: 24, class: "rounded-full", alt: "Account menu" %>
+          </summary>
+          <div class="absolute right-0 z-10 mt-2 w-48 rounded-md border border-gray-200 bg-white py-1 shadow-lg">
+            <%= link_to "Settings", edit_user_registration_path, class: "block px-4 py-2 hover:bg-gray-50" %>
+            <% if current_user.admin? && respond_to?(:madmin_root_path) %>
+              <div class="my-1 border-t border-gray-200"></div>
+              <%= link_to "Admin Area", madmin_root_path, class: "block px-4 py-2 hover:bg-gray-50" %>
+            <% end %>
+            <div class="my-1 border-t border-gray-200"></div>
+            <%= button_to "Logout", destroy_user_session_path, method: :delete, form_class: "block",
+                          class: "block w-full px-4 py-2 text-left hover:bg-gray-50" %>
+          </div>
+        </details>
+      <% else %>
+        <%= link_to "Sign Up", new_user_registration_path, class: "hover:text-gray-900" %>
+        <%= link_to "Login", new_user_session_path, class: "hover:text-gray-900" %>
+      <% end %>
+    </nav>
+  </div>
+</header>
