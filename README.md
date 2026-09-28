@@ -4,7 +4,7 @@
 
 # GoRails App Template
 
-A Rails 8.1+ application template. It generates a working app with accounts, an admin panel, background jobs and a front end already wired together — no Redis, no Sidekiq, no webpacker. Run it once and you have something to build on instead of a folder of boilerplate. You pick the job scheduler and the CSS framework; everything else is the same.
+A Rails 8.1+ application template. It generates a working app with accounts, an admin panel, background jobs and a front end already wired together — no Redis, no Sidekiq, no webpacker. Run it once and you have something to build on instead of a folder of boilerplate. You pick the job scheduler, the CSS framework, and the testing framework; everything else is the same.
 
 #### What's included
 
@@ -48,13 +48,14 @@ Or if you have downloaded this repo, you can reference template.rb locally:
 rails new myapp -d postgresql -m template.rb
 ```
 
-#### Choosing a scheduler and a CSS framework
+#### Choosing a scheduler, CSS framework, and testing framework
 
-Everything else is installed by default. The template asks two questions:
+Everything else is installed by default. The template asks three questions:
 
 ```
 Which job scheduler? [solid_queue/sidekiq/none] (solid_queue)
 Which CSS framework? [bootstrap/tailwind/simple/none] (bootstrap)
+Which testing framework? [minitest/rspec/none] (minitest)
 ```
 
 | Answer | What you get |
@@ -66,11 +67,14 @@ Which CSS framework? [bootstrap/tailwind/simple/none] (bootstrap)
 | `CSS=tailwind` | Tailwind (v4) and matching scaffold templates. No Bootstrap, no Bootstrap JavaScript. |
 | `CSS=simple` | [simple.css](https://simplecss.org) v2, a 10KB classless stylesheet. Styled, but no build step: no `cssbundling-rails`, no `css:` process, and Rails' own scaffold templates are already semantic HTML, so they look right as they are. |
 | `CSS=none` | No CSS framework and no `cssbundling-rails`. Rails' own `application.css` is kept and the views are plain, unstyled HTML for you to style. |
+| `TESTING=minitest` | Rails' built-in Minitest. The template's `test/` directory is copied in. The default. |
+| `TESTING=rspec` | Adds the `rspec-rails` gem and runs `rails g rspec:install`. The `test/` directory is removed. |
+| `TESTING=none` | No testing framework. The `test/` directory is removed. |
 
-Press Enter to take the default for either one. To skip the questions entirely, preset them in the environment — this is what the test suite and CI do:
+Press Enter to take the default for any one. To skip the questions entirely, preset them in the environment — this is what the test suite and CI do:
 
 ```bash
-SCHEDULER=sidekiq CSS=tailwind rails new myapp -d postgresql -m template.rb
+SCHEDULER=sidekiq CSS=tailwind TESTING=rspec rails new myapp -d postgresql -m template.rb
 ```
 
 Both answers need a little follow-up depending on what you pick: `SCHEDULER=sidekiq` needs a reachable

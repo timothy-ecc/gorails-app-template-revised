@@ -12,7 +12,7 @@ class TemplateTest < Minitest::Test
 
   def test_generator_succeeds
     output, _err = capture_subprocess_io do
-      system("DISABLE_SPRING=1 SKIP_GIT=1 rails new test_app -m template.rb")
+      system("DISABLE_SPRING=1 SKIP_GIT=1 TESTING=minitest rails new test_app -m template.rb")
     end
     assert_includes output, "Jumpstart app successfully created!"
 
@@ -47,7 +47,7 @@ class TemplateTest < Minitest::Test
   # a different CSS toolchain and a non-default scheduler in a single pass.
   def test_generator_with_choices_succeeds
     output, _err = capture_subprocess_io do
-      system("DISABLE_SPRING=1 SKIP_GIT=1 SCHEDULER=sidekiq CSS=tailwind rails new test_app -m template.rb")
+      system("DISABLE_SPRING=1 SKIP_GIT=1 SCHEDULER=sidekiq CSS=tailwind TESTING=minitest rails new test_app -m template.rb")
     end
     assert_includes output, "SCHEDULER: sidekiq"
     assert_includes output, "CSS: tailwind"
@@ -95,7 +95,7 @@ class TemplateTest < Minitest::Test
   # template that Propshaft serves as it is, and the views are the same plain HTML as `none`.
   def test_generator_with_simple_css_succeeds
     output, _err = capture_subprocess_io do
-      system("DISABLE_SPRING=1 SKIP_GIT=1 CSS=simple rails new test_app -m template.rb")
+      system("DISABLE_SPRING=1 SKIP_GIT=1 CSS=simple TESTING=minitest rails new test_app -m template.rb")
     end
     assert_includes output, "CSS: simple"
 

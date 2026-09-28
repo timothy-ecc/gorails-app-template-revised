@@ -52,10 +52,11 @@ end
 
 def ask_questions
   say "\nBase install: every package is added by default.", :blue
-  say "Preset either answer with SCHEDULER=... CSS=...\n"
+  say "Preset either answer with SCHEDULER=... CSS=... TESTING=...\n"
 
   @scheduler = choose("SCHEDULER", "Which job scheduler?", %w[solid_queue sidekiq none], "solid_queue")
   @css = choose("CSS", "Which CSS framework?", %w[bootstrap tailwind simple none], "bootstrap")
+  @testing = choose("TESTING", "Which testing framework?", %w[minitest rspec none], "minitest")
 end
 
 # Bootstrap and Tailwind are installed through cssbundling-rails, so they need a build step, a
@@ -76,6 +77,7 @@ def add_gems
   add_gem 'omniauth-github', '~> 2.0'
   add_gem 'pretender', '~> 1.0'
   add_gem 'pundit', '~> 2.5'
+  add_gem 'rspec-rails', group: %i[development test] if @testing == "rspec"
   add_gem 'sidekiq' if @scheduler == "sidekiq"
   add_gem 'sitemap_generator', '~> 7.0'
 end
@@ -123,6 +125,15 @@ def configure_scheduler
   end
 end
 
+def configure_testing
+  case @testing
+  when "rspec"
+    generate "rspec:install"
+  when "none"
+    remove_dir "test"
+  end
+end
+
 def add_users
   route "root to: 'home#index'"
   generate "devise:install"
@@ -162,7 +173,7 @@ def copy_templates
   # Thor's `directory` defaults its destination to the source path, hence the explicit ".".
   # simple.css styles the same plain HTML as `none`, so it reuses that overlay and adds its own.
   directory "app", force: true
-  directory "test", force: true
+  directory "test", force: true if @testing == "minitest"
   directory "lib/tasks", force: true if @scheduler == "solid_queue"
   directory "lib/templates", force: true if css_build?
   directory "variants/#{@css == "simple" ? "none" : @css}", ".", force: true unless @css == "bootstrap"
@@ -280,6 +291,7 @@ after_bundle do
 
   copy_templates
   configure_scheduler
+  configure_testing
 
   add_esbuild_script
 
@@ -308,5 +320,5 @@ after_bundle do
   say "  gem install foreman"
   say "  bin/dev"
   say
-  say "  scheduler: #{@scheduler}, css: #{@css}"
+  say "  scheduler: #{@scheduler}, css: #{@css}, testing: #{@testing}"
 end
